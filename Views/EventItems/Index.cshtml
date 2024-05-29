@@ -1,0 +1,195 @@
+﻿@model Test.ViewModels.EventItemsProducts
+
+@{
+    ViewBag.Title = "Event Items";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.products[0].Name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.eventItems[0].Qty)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.eventItems[0].TotalAmount)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.eventItems[0].CreatedOn)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.eventItems[0].UpdatedOn)
+        </th>
+        <th>
+        </th>
+    </tr>
+
+    @foreach (var item in Model.eventItems)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Product.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Qty)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.TotalAmount)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedOn)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.UpdatedOn)
+            </td>
+            <td>
+                <button class="btn btn-outline-danger" onclick="deleteEventItem(@item.EventItemId)">Delete</button>
+            </td>
+        </tr>
+    }
+
+</table>
+
+@*@using (Html.BeginForm())*@
+@using (Html.BeginForm("Create", "EventItems", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(e => e.EventId)
+    <table class="table mt-5">
+        <tr>
+            <th></th>
+            <th>
+                @Html.DisplayNameFor(model => model.products[0].Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.products[0].Threshold)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.products[0].WeightType)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.products[0].Type)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.products[0].Price)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.eventItems[0].Qty)
+            </th>
+        </tr>
+
+        @foreach (var item in Model.products)
+        {
+            <tr>
+                <td>
+                    <input onchange="handleTotalAmount(1, this, 'product-@item.ProductId.ToString()-Quantity')" type="checkbox" value="true" id="product-@item.ProductId.ToString()" name="product-@item.ProductId.ToString()" />
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Threshold)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.WeightType)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Type)
+                </td>
+                <td>
+                    @{
+                        if (item.Type == "Purchasable")
+                        {
+                            var discountedPrice = (double)item.Price - Convert.ToDouble(item.Price) * 0.05;
+                            @*<span class="text-decoration-line-through">@Html.DisplayFor(modelItem => item.Price)</span>*@
+                            @discountedPrice
+                        }
+                        else
+                        {
+                            @Html.DisplayFor(modelItem => item.Price)
+                        }
+                    }
+                </td>
+                <td>
+                    <select onchange="handleTotalAmount(0, this, 'product-@item.ProductId.ToString()-Quantity')" class="form-control" id="Quantity" name="product-@item.ProductId.ToString()-Quantity">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                    </select>
+                </td>
+            </tr>
+        }
+        <tr>
+            <td colspan="7">Total amount: <span id="totalAmount">0</span></td>
+        </tr>
+    </table>
+
+
+    <input type="submit" value="Save" class="btn btn-primary" />
+
+}
+
+
+@section Scripts {
+    <script>
+        const deleteEventItem = (id) => {
+            if (confirm('Are you sure you want to delete the event item?')) {
+
+                AjaxCall(`/EventItems/Delete/${id}`, "GET", null, null, null,
+
+                    (response) => {
+                        if (response.success) {
+                            window.location.reload(true);
+                        } else {
+                            alert('Failed to delete the record.', response.error);
+                        }
+                    },
+
+                    (error) => console.log(error)
+                )
+            }
+        }
+
+        let totalAmount = 0;
+
+        const handleTotalAmount = (i, elem, selectElem) => {
+            const quantity = $(`select[name="${selectElem}"]`).val()
+
+            const row = elem.closest('tr')
+
+            switch (i) {
+                case 0:
+
+                    const checkbox = $(`input[name="${selectElem.slice(0, 9)}"]`)
+
+                    if ($(checkbox).is(":checked")) {
+                        totalAmount += row.childNodes[11].firstChild.nodeValue * quantity
+                    }
+                    break;
+                case 1:
+                    if ($(elem).is(":checked")) {
+                        totalAmount += row.childNodes[11].firstChild.nodeValue * quantity
+                    } else {
+                        totalAmount -= row.childNodes[11].firstChild.nodeValue * quantity
+                    }
+                    break;
+            }
+            $("#totalAmount").text(totalAmount)
+            console.log(totalAmount)
+        }
+    </script>
+}

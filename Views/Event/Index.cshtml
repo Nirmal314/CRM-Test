@@ -1,0 +1,81 @@
+﻿@model IEnumerable<Test.Models.Event>
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Index</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.EventDate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Duration)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.QtyOfDishes)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.CreatedOn)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.UpdatedOn)
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.EventDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Duration)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.QtyOfDishes)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedOn)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.UpdatedOn)
+            </td>
+            <td>
+                <a href="/Event/Edit/@item.EventId" class="btn btn-outline-primary">Edit</a>
+                <a href="/EventItems/Index/@item.EventId" class="btn btn-outline-success">View</a>
+                <button class="btn btn-outline-danger" onclick="deleteEvent(@item.EventId)">Delete</button>
+            </td>
+        </tr>
+    }
+
+</table>
+
+@section Scripts {
+    <script>
+        const deleteEvent = (id) => {
+            if (confirm('Are you sure you want to delete the event?')) {
+
+                AjaxCall(`/Event/Delete/${id}`, "GET", null, null, null,
+
+                    (response) => {
+                        if (response.success) {
+                            window.location.reload(true);
+                        } else {
+                            alert('Failed to delete the record.', response.error);
+                        }
+                    },
+
+                    (error) => console.log(error)
+                )
+            }
+        }
+    </script>
+}
