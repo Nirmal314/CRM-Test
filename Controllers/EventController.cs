@@ -7,6 +7,7 @@ using Test.Models;
 
 namespace Test.Controllers
 {
+    [SITClone.Filters.Authorize(Roles = "customer")]
     public class EventController : Controller
     {
         private readonly ExamEntities1 db = new ExamEntities1();
@@ -28,7 +29,7 @@ namespace Test.Controllers
             if (e == null)
             {
                 ViewBag.Error = "No event found.";
-                return RedirectToAction("Index", "Event");
+                return HttpNotFound();
             }
             return View(e);
         }
@@ -38,6 +39,10 @@ namespace Test.Controllers
             return View();
         }
 
+        public ActionResult EventForm()
+        {
+            return PartialView("_CreateEvent");
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create(Event e)
@@ -46,7 +51,8 @@ namespace Test.Controllers
             {
                 return View(e);
             }
-            if (!db.Events.Any(ev => ev.EventDate == e.EventDate))
+            // ?if there is no event on same date
+            if (!db.Events.Any(ev => ev.EventDate == e.EventDate && ev.IsDeleted == 0))
             {
                 e.CreatedOn = DateTime.Now;
                 e.UpdatedOn = DateTime.Now;
@@ -63,7 +69,11 @@ namespace Test.Controllers
                 switch (e.Duration.ToLower())
                 {
                     case "firsthalf":
-                        if (db.Events.Any(ev => ev.EventDate == e.EventDate && ev.Duration == "firsthalf"))
+
+                        // ?if there is any event on same duration (firsthalf | fullhalf)
+                        if (db.Events.Any(ev => ev.EventDate == e.EventDate &&
+                        (ev.Duration == "firsthalf" || ev.Duration == "fullhalf")
+                        && ev.IsDeleted == 0))
                         {
                             ViewBag.Error = "You already have an event.";
                             return View(e);
@@ -81,7 +91,11 @@ namespace Test.Controllers
                             return RedirectToAction("Index", "Event");
                         }
                     case "secondhalf":
-                        if (db.Events.Any(ev => ev.EventDate == e.EventDate && ev.Duration == "secondhalf"))
+
+                        // ?if there is any event on same duration (secondhalf | fullhalf)
+                        if (db.Events.Any(ev => ev.EventDate == e.EventDate &&
+                        (ev.Duration == "secondhalf" || ev.Duration == "fullhalf") &&
+                        ev.IsDeleted == 0))
                         {
                             ViewBag.Error = "You already have an event.";
                             return View(e);
@@ -98,6 +112,8 @@ namespace Test.Controllers
                             db.SaveChanges();
                             return RedirectToAction("Index", "Event");
                         }
+
+                    // ?dont allow fullhalf
                     default:
                         ViewBag.Error = "You already have an event.";
                         return View(e);
@@ -107,6 +123,8 @@ namespace Test.Controllers
 
         }
 
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit(Event e)
@@ -115,10 +133,10 @@ namespace Test.Controllers
             {
                 return View(e);
             }
-
-            if (!db.Events.Any(ev => ev.EventDate == e.EventDate))
+            Event existingEvent = db.Events.Find(e.EventId);
+            // ?if there is no event on same date
+            if (!db.Events.Any(ev => ev.EventDate == e.EventDate && ev.IsDeleted == 0))
             {
-                Event existingEvent = db.Events.Find(e.EventId);
 
                 existingEvent.UpdatedOn = DateTime.Now;
                 existingEvent.QtyOfDishes = e.QtyOfDishes;
@@ -132,15 +150,18 @@ namespace Test.Controllers
             {
                 switch (e.Duration.ToLower())
                 {
+                    // ?if there is any event on same duration (firsthalf | fullhalf)
                     case "firsthalf":
-                        if (db.Events.Any(ev => ev.EventDate == e.EventDate && ev.Duration == "firsthalf"))
+                        if (db.Events.Any(ev => ev.EventId != e.EventId &&
+                        ev.EventDate == e.EventDate &&
+                        (ev.Duration == "firsthalf" || ev.Duration == "fullhalf") &&
+                        ev.IsDeleted == 0))
                         {
                             ViewBag.Error = "You already have an event.";
                             return View(e);
                         }
                         else
                         {
-                            Event existingEvent = db.Events.Find(e.EventId);
 
                             existingEvent.UpdatedOn = DateTime.Now;
                             existingEvent.QtyOfDishes = e.QtyOfDishes;
@@ -150,15 +171,19 @@ namespace Test.Controllers
                             db.SaveChanges();
                             return RedirectToAction("Index", "Event");
                         }
+
+                    // ?if there is any event on same duration (secondhalf | fullhalf)
                     case "secondhalf":
-                        if (db.Events.Any(ev => ev.EventDate == e.EventDate && ev.Duration == "secondhalf"))
+                        if (db.Events.Any(ev => ev.EventId != e.EventId &&
+                        ev.EventDate == e.EventDate &&
+                        (ev.Duration == "secondhalf" || ev.Duration == "fullhalf") &&
+                        ev.IsDeleted == 0))
                         {
                             ViewBag.Error = "You already have an event.";
                             return View(e);
                         }
                         else
                         {
-                            Event existingEvent = db.Events.Find(e.EventId);
 
                             existingEvent.UpdatedOn = DateTime.Now;
                             existingEvent.QtyOfDishes = e.QtyOfDishes;
@@ -168,14 +193,33 @@ namespace Test.Controllers
                             db.SaveChanges();
                             return RedirectToAction("Index", "Event");
                         }
+
+                    // ?if there is any event on same duration (secondhalf | firsthalf)
                     default:
-                        ViewBag.Error = "You already have an event.";
-                        return View(e);
+
+                        if (db.Events.Any(ev => ev.EventId != e.EventId &&
+                        ev.EventDate == e.EventDate &&
+                        (ev.Duration == "secondhalf" || ev.Duration == "firsthalf") &&
+                        ev.IsDeleted == 0))
+                        {
+                            ViewBag.Error = "You already have an event.";
+                            return View(e);
+                        }
+
+                        existingEvent.UpdatedOn = DateTime.Now;
+                        existingEvent.QtyOfDishes = e.QtyOfDishes;
+                        existingEvent.Duration = e.Duration;
+                        existingEvent.EventDate = e.EventDate;
+
+                        db.SaveChanges();
+                        return RedirectToAction("Index", "Event");
 
                 }
             }
 
         }
+
+
         public ActionResult Delete(int id)
         {
             Event e = db.Events.Find(id);
@@ -187,6 +231,11 @@ namespace Test.Controllers
             {
                 //db.Events.Remove(e);
                 //db.SaveChanges();
+
+                //! delete corresponding eventitems
+                List<EventItem> eventItems = db.EventItems.Where(ei => ei.EventId == id && ei.IsDeleted == 0).ToList();
+
+                eventItems.ForEach(item => item.IsDeleted = 1);
 
                 e.IsDeleted = 1;
                 db.SaveChanges();

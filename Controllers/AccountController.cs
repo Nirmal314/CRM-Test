@@ -46,7 +46,24 @@ namespace SITClone.Controllers
             }
             else
             {
-                FormsAuthentication.SetAuthCookie(user.Email, false);
+                var authTicket = new FormsAuthenticationTicket(
+                    1,
+                    user.Email,
+                    DateTime.Now,
+                    DateTime.Now.AddDays(2),
+                    false,
+                    user.UserId.ToString()
+                );
+
+                string encryptedTicket = FormsAuthentication.Encrypt(authTicket);
+
+                HttpCookie authCookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket);
+
+                authCookie.Expires = DateTime.Now.AddDays(2);
+
+                Response.Cookies.Add(authCookie);
+
+                //FormsAuthentication.SetAuthCookie(user.Email, false);
                 Session["UserId"] = user.UserId;
                 Session["Type"] = user.Type;
 
@@ -82,7 +99,6 @@ namespace SITClone.Controllers
         {
             Session.Clear();
             FormsAuthentication.SignOut();
-
             return RedirectToAction("Login", "Account");
         }
     }

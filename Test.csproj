@@ -133,6 +133,7 @@
     <Compile Include="Controllers\EventItemsController.cs" />
     <Compile Include="Controllers\EventController.cs" />
     <Compile Include="CustomAttributes\MinimumAgeAttribute.cs" />
+    <Compile Include="Filters\AuthorizeAttribute.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -241,6 +242,7 @@
     <Content Include="Views\Event\Create.cshtml" />
     <Content Include="Views\Event\Edit.cshtml" />
     <Content Include="Views\EventItems\Index.cshtml" />
+    <Content Include="Views\Shared\_CreateEvent.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

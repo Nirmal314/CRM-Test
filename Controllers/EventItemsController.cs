@@ -8,15 +8,22 @@ using Test.ViewModels;
 
 namespace Test.Controllers
 {
+    [SITClone.Filters.Authorize(Roles = "customer")]
     public class EventItemsController : Controller
     {
         private readonly ExamEntities1 db = new ExamEntities1();
         public ActionResult Index(int id)
         {
+            Event ev = db.Events.Where(e => e.EventId == id && e.IsDeleted == 0).FirstOrDefault();
+            if (ev == null)
+            {
+                return HttpNotFound();
+            }
+
             EventItemsProducts vmodel = new EventItemsProducts();
 
             List<EventItem> ei = db.EventItems.Where(e => e.EventId == id && e.IsDeleted == 0 && (e.Product.Type == "DishItem" || e.Product.Type == "Purchasable")).ToList();
-            List<Product> pd = db.Products.Where(p => p.Type == "DishItem" || p.Type == "Purchasable").ToList();
+            List<Product> pd = db.Products.Where(p => (p.Type == "DishItem" || p.Type == "Purchasable") && p.Isdeleted == 0).ToList();
 
             vmodel.eventItems = ei;
             vmodel.products = pd;
@@ -37,13 +44,13 @@ namespace Test.Controllers
                 {
                     int productId = Convert.ToInt32(item.ToString().Split('-')[1]);
                     int eventId = Convert.ToInt32(collection["EventId"]);
-                    bool doesExist = db.EventItems.Where(e => e.ItemId == productId && e.IsDeleted == 0 && e.EventId == eventId).FirstOrDefault() != null ? true : false;
+                    bool doesExist = db.EventItems.Where(e => e.ItemId == productId && e.IsDeleted == 0 && e.EventId == eventId).FirstOrDefault() != null;
 
                     if (!doesExist)
                     {
                         Product product = db.Products.Find(productId);
 
-                        if (product.Type != "Purchasable" && product.Type != "DishItem")
+                        if (product.Type.ToLower() != "purchasable" && product.Type.ToLower() != "dishitem")
                         {
                             ViewBag.Error = "Only Purchasable and DishItem are allowed.";
                             return RedirectToAction("Index", "EventItems", new { id = collection["EventId"] });
@@ -66,7 +73,6 @@ namespace Test.Controllers
                             db.SaveChanges();
                         }
                     }
-
                 }
             }
             return RedirectToAction("Index", "EventItems", new { id = collection["EventId"] });

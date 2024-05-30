@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title - Test</title>
     @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/assets/datatables.min.css")
     @Scripts.Render("~/bundles/modernizr")
 </head>
 <body>
@@ -17,7 +18,7 @@
             </button>
             <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
                 <ul class="navbar-nav flex-grow-1">
-                    @if (Session["UserId"] != null)
+                    @if (Session["UserId"] != null || User.Identity.IsAuthenticated)
                     {
                         <li>@Html.ActionLink("Event", "Index", "Event", new { area = "" }, new { @class = "nav-link" })</li>
                         <li>@Html.ActionLink("Logout", "Logout", "Account", new { area = "" }, new { @class = "nav-link" })</li>
